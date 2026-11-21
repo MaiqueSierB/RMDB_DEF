@@ -1,8 +1,10 @@
 import http from 'node:http';
+// Registra os slash commands a cada início
+import './deploy-commands.js';
 import {
     Client, Events, GatewayIntentBits,
     EmbedBuilder, ActionRowBuilder,
-    ButtonBuilder, ButtonStyle,
+    ButtonBuilder, ButtonStyle, MessageFlags,
     ModalBuilder, TextInputBuilder, TextInputStyle
 } from 'discord.js';
 
@@ -53,7 +55,7 @@ async function comandoAssistir(interaction) {
     const userId = interaction.user.id;
 
     if (sub === 'adicionar') {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const r = await watchlist.adicionar(userId, interaction.options.getString('filme'));
         return interaction.editReply(r.msg);
     }
@@ -62,14 +64,13 @@ async function comandoAssistir(interaction) {
         const texto = lista.length
             ? lista.map(f => `🎬 **${f.titulo}** — ${f.provedores.length ? f.provedores.join(', ') : 'ainda não está em streaming'}`).join('\n')
             : 'Sua lista está vazia. Use /assistir adicionar';
-        return interaction.reply({ content: texto.slice(0, 2000), ephemeral: true });
+        return interaction.reply({ content: texto.slice(0, 2000), flags: MessageFlags.Ephemeral });
     }
     if (sub === 'remover') {
         const titulo = watchlist.remover(userId, interaction.options.getString('filme'));
         return interaction.reply({
             content: titulo ? `🗑️ **${titulo}** saiu da sua lista.` : 'Esse filme não está na sua lista.',
-            ephemeral: true
-        });
+            flags: MessageFlags.Ephemeral });
     }
 }
 
@@ -80,7 +81,7 @@ async function comandoFantasy(interaction) {
     const t = fantasy.temporada(1); // as escolhas são sempre para o mês que vem
 
     if (sub === 'filmes') {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         let lista = fantasy.pool(t);
         if (!lista.length && hojeBR().getUTCDate() >= 20) lista = await fantasy.gerarPool(t);
         if (!lista.length) return interaction.editReply(`A lista de ${t} ainda não saiu. Ela abre no dia 20 🗓️`);
@@ -91,10 +92,10 @@ async function comandoFantasy(interaction) {
         const msg = fantasy.escolher(userId, t,
             interaction.options.getString('filme'),
             interaction.options.getBoolean('capitao') ?? false);
-        return interaction.reply({ content: msg, ephemeral: true });
+        return interaction.reply({ content: msg, flags: MessageFlags.Ephemeral });
     }
     if (sub === 'remover') {
-        return interaction.reply({ content: fantasy.remover(userId, t, interaction.options.getString('filme')), ephemeral: true });
+        return interaction.reply({ content: fantasy.remover(userId, t, interaction.options.getString('filme')), flags: MessageFlags.Ephemeral });
     }
     if (sub === 'time') {
         // depois que fecha, mostra o time do mês em andamento
@@ -103,7 +104,7 @@ async function comandoFantasy(interaction) {
         const texto = meus.length
             ? meus.map(f => `${f.capitao ? '⭐' : '🎬'} ${f.titulo}`).join('\n')
             : 'Você ainda não escolheu filmes.';
-        return interaction.reply({ content: `**Seu time — ${tt}** (${meus.length}/5)\n${texto}`, ephemeral: true });
+        return interaction.reply({ content: `**Seu time — ${tt}** (${meus.length}/5)\n${texto}`, flags: MessageFlags.Ephemeral });
     }
     if (sub === 'ranking') {
         await interaction.deferReply();
@@ -125,8 +126,7 @@ client.on(Events.InteractionCreate, async interaction => {
     if (interaction.channelId !== ID_CANAL_PERMITIDO) {
         return interaction.reply({ 
             content: "❌ Este bot só pode ser usado no canal específico de filmes.", 
-            ephemeral: true 
-        });
+            flags: MessageFlags.Ephemeral });
     }
     try {
         // ================= SISTEMA DE BOTÕES =================
@@ -169,7 +169,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const notaRaw = interaction.fields.getTextInputValue('nota').replace(',', '.');
             const nota = parseFloat(notaRaw);
 
-            if (isNaN(nota) || nota < 0 || nota > 10) return interaction.reply({ content: "❌ Nota inválida. Usa valores entre 0 e 10.", ephemeral: true });
+            if (isNaN(nota) || nota < 0 || nota > 10) return interaction.reply({ content: "❌ Nota inválida. Usa valores entre 0 e 10.", flags: MessageFlags.Ephemeral });
 
             db.prepare(`
                 INSERT INTO votos_filmes (movie_id, user_id, username, score)
@@ -186,7 +186,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 ON CONFLICT(movie_id) DO UPDATE SET server_score = excluded.server_score, vote_count = excluded.vote_count
             `).run(id, movie.title || movie.name, stats.avg, stats.total);
 
-            await interaction.reply({ content: `✅ Voto registrado! **${movie.title || movie.name}** agora tem média **${stats.avg.toFixed(1)}** (${stats.total} votos).`, ephemeral: true });
+            await interaction.reply({ content: `✅ Voto registrado! **${movie.title || movie.name}** agora tem média **${stats.avg.toFixed(1)}** (${stats.total} votos).`, flags: MessageFlags.Ephemeral });
             return;
         }
 
