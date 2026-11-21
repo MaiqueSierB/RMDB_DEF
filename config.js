@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 // num arquivo que não é apagado nos deploys nem fica acessível pela web.
 const secretsFile = process.env.SECRETS_FILE || '/home/u243267678/domains/mrbnexus.com.br/.rmdb.env';
 if (fs.existsSync(secretsFile)) dotenv.config({ path: secretsFile });
+console.log(`Segredos: ${secretsFile} ${fs.existsSync(secretsFile) ? 'encontrado' : 'NÃO encontrado'}; ` +
+    ['TOKEN', 'CLIENT_ID', 'GUILD_ID', 'TMDB_API_KEY', 'FANTASY_CHANNEL_ID']
+        .map(k => `${k}=${process.env[k] ? 'ok' : 'faltando'}`).join(' '));
 
 // Este objeto vai conter todas as nossas variáveis de ambiente.
 // Nós lemos do process.env aqui, e apenas aqui.
